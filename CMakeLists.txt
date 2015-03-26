@@ -19,7 +19,7 @@ include_directories(
 
 set( LIBBENTO4_SOURCES )
 
-set(SOURCE_DIRS Core Codecs Crypto Metadata System/Posix System/StdC)
+set(SOURCE_DIRS Core Codecs Crypto MetaData System/Posix System/StdC)
 
 foreach(DIR ${SOURCE_DIRS})
 
