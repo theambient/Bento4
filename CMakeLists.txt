@@ -87,3 +87,16 @@ foreach(DIR ${SOURCE_DIRS})
 endforeach()
 
 install(TARGETS bento4 DESTINATION lib/)
+
+################################################################
+#############				PACKAGE				################
+################################################################
+
+set(CPACK_PACKAGE_NAME "bento4")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A fast, modern, open source C++ toolkit for all your MP4 and MPEG DASH media format needs")
+set(CPACK_PACKAGE_CONTACT "Ruslan Mullakhmetov <>")
+set(CPACK_PACKAGE_VERSION_MAJOR "1")
+set(CPACK_PACKAGE_VERSION_MINOR "4")
+set(CPACK_PACKAGE_VERSION_PATCH "2")
+
+include(CPack)
