@@ -91,6 +91,8 @@
 #include "Ap4TfraAtom.h"
 #include "Ap4MfroAtom.h"
 #include "Ap4TfdtAtom.h"
+#include "Ap4TfrfAtom.h"
+#include "Ap4TfxdAtom.h"
 #include "Ap4TencAtom.h"
 #include "Ap4SencAtom.h"
 #include "Ap4SaioAtom.h"
@@ -134,13 +136,13 @@ AP4_AtomFactory::RemoveTypeHandler(TypeHandler* handler)
 |   AP4_AtomFactory::CreateAtomFromStream
 +---------------------------------------------------------------------*/
 AP4_Result
-AP4_AtomFactory::CreateAtomFromStream(AP4_ByteStream& stream, 
+AP4_AtomFactory::CreateAtomFromStream(AP4_ByteStream& stream,
                                       AP4_Atom*&      atom)
 {
     AP4_LargeSize stream_size     = 0;
     AP4_Position  stream_position = 0;
     AP4_LargeSize bytes_available = (AP4_LargeSize)(-1);
-    if (AP4_SUCCEEDED(stream.GetSize(stream_size)) && 
+    if (AP4_SUCCEEDED(stream.GetSize(stream_size)) &&
         stream_size != 0 &&
         AP4_SUCCEEDED(stream.Tell(stream_position)) &&
         stream_position <= stream_size) {
@@ -153,7 +155,7 @@ AP4_AtomFactory::CreateAtomFromStream(AP4_ByteStream& stream,
 |   AP4_AtomFactory::CreateAtomFromStream
 +---------------------------------------------------------------------*/
 AP4_Result
-AP4_AtomFactory::CreateAtomFromStream(AP4_ByteStream& stream, 
+AP4_AtomFactory::CreateAtomFromStream(AP4_ByteStream& stream,
                                       AP4_LargeSize&  bytes_available,
                                       AP4_Atom*&      atom)
 {
@@ -218,7 +220,7 @@ AP4_AtomFactory::CreateAtomFromStream(AP4_ByteStream& stream,
     // create the atom
     result = CreateAtomFromStream(stream, type, size_32, size, atom);
     if (AP4_FAILED(result)) return result;
-    
+
     // if we failed to create an atom, use a generic version
     if (atom == NULL) {
         unsigned int payload_offset = 8;
@@ -245,7 +247,7 @@ AP4_AtomFactory::CreateAtomFromStream(AP4_ByteStream& stream,
         atom = NULL;
         return result;
     }
-    
+
     return AP4_SUCCESS;
 }
 
@@ -253,7 +255,7 @@ AP4_AtomFactory::CreateAtomFromStream(AP4_ByteStream& stream,
 |   AP4_AtomFactory::CreateAtomFromStream
 +---------------------------------------------------------------------*/
 AP4_Result
-AP4_AtomFactory::CreateAtomFromStream(AP4_ByteStream& stream, 
+AP4_AtomFactory::CreateAtomFromStream(AP4_ByteStream& stream,
                                       AP4_UI32        type,
                                       AP4_UI32        size_32,
                                       AP4_UI64        size_64,
@@ -261,7 +263,7 @@ AP4_AtomFactory::CreateAtomFromStream(AP4_ByteStream& stream,
 {
     bool atom_is_large = (size_32 == 1);
     bool force_64 = (size_32==1 && ((size_64>>32) == 0));
-    
+
     // create the atom
     if (GetContext() == AP4_ATOM_TYPE_STSD) {
         // sample entry
@@ -316,7 +318,7 @@ AP4_AtomFactory::CreateAtomFromStream(AP4_ByteStream& stream,
           case AP4_ATOM_TYPE_DTSE:
             atom = new AP4_AudioSampleEntry(type, size_32, stream, *this);
             break;
-            
+
           case AP4_ATOM_TYPE_RTP_:
             atom = new AP4_RtpHintSampleEntry(size_32, stream, *this);
             break;
@@ -471,7 +473,7 @@ AP4_AtomFactory::CreateAtomFromStream(AP4_ByteStream& stream,
             if (atom_is_large) return AP4_ERROR_INVALID_FORMAT;
             atom = AP4_AvccAtom::Create(size_32, stream);
             break;
-            
+
           case AP4_ATOM_TYPE_HVCC:
             if (atom_is_large) return AP4_ERROR_INVALID_FORMAT;
             atom = AP4_HvccAtom::Create(size_32, stream);
@@ -482,17 +484,21 @@ AP4_AtomFactory::CreateAtomFromStream(AP4_ByteStream& stream,
               AP4_UI08 uuid[16];
               AP4_Result result = stream.Read(uuid, 16);
               if (AP4_FAILED(result)) return result;
-              
+
               if (AP4_CompareMemory(uuid, AP4_UUID_PIFF_TRACK_ENCRYPTION_ATOM, 16) == 0) {
                   atom = AP4_PiffTrackEncryptionAtom::Create((AP4_UI32)size_64, stream);
               } else if (AP4_CompareMemory(uuid, AP4_UUID_PIFF_SAMPLE_ENCRYPTION_ATOM, 16) == 0) {
                   atom = AP4_PiffSampleEncryptionAtom::Create((AP4_UI32)size_64, stream);
+              } else if (AP4_CompareMemory(uuid, AP4_UUID_TFXD_ATOM, 16) == 0) {
+                  atom = AP4_TfxdAtom::Create((AP4_UI32)size_64, stream);
+              } else if (AP4_CompareMemory(uuid, AP4_UUID_TFRF_ATOM, 16) == 0) {
+                  atom = AP4_TfrfAtom::Create((AP4_UI32)size_64, stream);
               } else {
                   atom = new AP4_UnknownUuidAtom(size_64, uuid, stream);
               }
               break;
           }
-            
+
           case AP4_ATOM_TYPE_8ID_:
             atom = new AP4_NullTerminatedStringAtom(type, size_64, stream);
             break;
@@ -556,12 +562,12 @@ AP4_AtomFactory::CreateAtomFromStream(AP4_ByteStream& stream,
             if (atom_is_large) return AP4_ERROR_INVALID_FORMAT;
             atom = AP4_FtypAtom::Create(size_32, stream);
             break;
-                        
+
           case AP4_ATOM_TYPE_TIMS:
             if (atom_is_large) return AP4_ERROR_INVALID_FORMAT;
             atom = AP4_TimsAtom::Create(size_32, stream);
             break;
-     
+
           case AP4_ATOM_TYPE_SDP_:
             if (atom_is_large) return AP4_ERROR_INVALID_FORMAT;
             atom = AP4_SdpAtom::Create(size_32, stream);
@@ -722,7 +728,7 @@ AP4_AtomFactory::CreateAtomFromStream(AP4_ByteStream& stream,
           case AP4_ATOM_TYPE_SINF:
           case AP4_ATOM_TYPE_UDTA:
           case AP4_ATOM_TYPE_ILST:
-          case AP4_ATOM_TYPE_EDTS: 
+          case AP4_ATOM_TYPE_EDTS:
           case AP4_ATOM_TYPE_MDRI:
           case AP4_ATOM_TYPE_WAVE:
             if (atom_is_large) return AP4_ERROR_INVALID_FORMAT;
@@ -735,7 +741,7 @@ AP4_AtomFactory::CreateAtomFromStream(AP4_ByteStream& stream,
                 atom = AP4_ContainerAtom::Create(type, size_64, false, force_64, stream, *this);
             }
             break;
-            
+
           // full container atoms
           case AP4_ATOM_TYPE_META:
           case AP4_ATOM_TYPE_ODRM:
@@ -748,7 +754,7 @@ AP4_AtomFactory::CreateAtomFromStream(AP4_ByteStream& stream,
           case AP4_ATOM_TYPE_MDAT:
             // generic atoms
             break;
-            
+
           default: {
             // try all the external type handlers
             AP4_List<TypeHandler>::Item* handler_item = m_TypeHandlers.FirstItem();
@@ -764,7 +770,7 @@ AP4_AtomFactory::CreateAtomFromStream(AP4_ByteStream& stream,
           }
         }
     }
-    
+
     return AP4_SUCCESS;
 }
 
@@ -772,13 +778,13 @@ AP4_AtomFactory::CreateAtomFromStream(AP4_ByteStream& stream,
 |   AP4_AtomFactory::CreateAtomsFromStream
 +---------------------------------------------------------------------*/
 AP4_Result
-AP4_AtomFactory::CreateAtomsFromStream(AP4_ByteStream& stream, 
+AP4_AtomFactory::CreateAtomsFromStream(AP4_ByteStream& stream,
                                        AP4_AtomParent& atoms)
 {
     AP4_LargeSize stream_size     = 0;
     AP4_Position  stream_position = 0;
     AP4_LargeSize bytes_available = (AP4_LargeSize)(-1);
-    if (AP4_SUCCEEDED(stream.GetSize(stream_size)) && 
+    if (AP4_SUCCEEDED(stream.GetSize(stream_size)) &&
         stream_size != 0 &&
         AP4_SUCCEEDED(stream.Tell(stream_position)) &&
         stream_position <= stream_size) {
@@ -791,7 +797,7 @@ AP4_AtomFactory::CreateAtomsFromStream(AP4_ByteStream& stream,
 |   AP4_AtomFactory::CreateAtomsFromStream
 +---------------------------------------------------------------------*/
 AP4_Result
-AP4_AtomFactory::CreateAtomsFromStream(AP4_ByteStream& stream, 
+AP4_AtomFactory::CreateAtomsFromStream(AP4_ByteStream& stream,
                                        AP4_LargeSize   bytes_available,
                                        AP4_AtomParent& atoms)
 {
@@ -803,7 +809,7 @@ AP4_AtomFactory::CreateAtomsFromStream(AP4_ByteStream& stream,
             atoms.AddChild(atom);
         }
     } while (AP4_SUCCEEDED(result));
-    
+
     return AP4_SUCCESS;
 }
 
@@ -811,7 +817,7 @@ AP4_AtomFactory::CreateAtomsFromStream(AP4_ByteStream& stream,
 |   AP4_AtomFactory::PushContext
 +---------------------------------------------------------------------*/
 void
-AP4_AtomFactory::PushContext(AP4_Atom::Type context) 
+AP4_AtomFactory::PushContext(AP4_Atom::Type context)
 {
     m_ContextStack.Append(context);
 }
@@ -820,7 +826,7 @@ AP4_AtomFactory::PushContext(AP4_Atom::Type context)
 |   AP4_AtomFactory::PopContext
 +---------------------------------------------------------------------*/
 void
-AP4_AtomFactory::PopContext() 
+AP4_AtomFactory::PopContext()
 {
     m_ContextStack.RemoveLast();
 }
@@ -829,7 +835,7 @@ AP4_AtomFactory::PopContext()
 |   AP4_AtomFactory::GetContext
 +---------------------------------------------------------------------*/
 AP4_Atom::Type
-AP4_AtomFactory::GetContext(AP4_Ordinal depth) 
+AP4_AtomFactory::GetContext(AP4_Ordinal depth)
 {
     AP4_Ordinal available = m_ContextStack.ItemCount();
     if (depth >= available) return 0;
