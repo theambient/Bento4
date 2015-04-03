@@ -39,9 +39,11 @@ AP4_TfrfAtom::AP4_TfrfAtom(AP4_UI32 size,
 	                         AP4_ByteStream& stream) :
     AP4_UuidAtom(size, AP4_UUID_TFRF_ATOM, version, flags)
 {
-	AP4_UI32 m_FragmentCount;
+	AP4_UI08 m_FragmentCount;
 
-	stream.ReadUI32(m_FragmentCount);
+	AP4_Result r = stream.ReadUI08(m_FragmentCount);
+	printf("m_FragmentCount: %u\n", m_FragmentCount);
+	assert(AP4_SUCCEEDED(r));
 
 	for(size_t i=0; i<m_FragmentCount; ++i)
 	{
@@ -82,7 +84,7 @@ AP4_TfrfAtom::InspectFields(AP4_AtomInspector& inspector)
 AP4_Result
 AP4_TfrfAtom::WriteFields(AP4_ByteStream& stream)
 {
-	stream.WriteUI32(m_Entries.size());
+	stream.WriteUI08(m_Entries.size());
 
 	for(size_t i=0; i<m_Entries.size(); ++i)
 	{
