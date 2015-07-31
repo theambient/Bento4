@@ -28,7 +28,7 @@ AP4_TfrfAtom::Create(AP4_Size size, AP4_ByteStream& stream)
 }
 
 AP4_TfrfAtom::AP4_TfrfAtom():
-    AP4_UuidAtom(AP4_FULL_UUID_ATOM_HEADER_SIZE + 4, AP4_UUID_TFRF_ATOM, 1, 0)
+    AP4_UuidAtom(AP4_FULL_UUID_ATOM_HEADER_SIZE + 1, AP4_UUID_TFRF_ATOM, 1, 0)
 {
 
 }
@@ -42,7 +42,6 @@ AP4_TfrfAtom::AP4_TfrfAtom(AP4_UI32 size,
 	AP4_UI08 m_FragmentCount;
 
 	AP4_Result r = stream.ReadUI08(m_FragmentCount);
-	printf("m_FragmentCount: %u\n", m_FragmentCount);
 	assert(AP4_SUCCEEDED(r));
 
 	for(size_t i=0; i<m_FragmentCount; ++i)
